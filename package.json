@@ -1,0 +1,12 @@
+{
+  "name": "desafio-01",
+  "version": "1.0.0",
+  "description": "Desafio 01 da rockeseat da trilha de nodeJs",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
