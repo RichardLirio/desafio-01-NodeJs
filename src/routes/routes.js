@@ -17,8 +17,16 @@ export const routes = [
     method: "POST",
     path: buildRoutePath("/tasks"),
     handler: (req, res) => {
-      const { id, title, description, created_at, completed_at, update_at } =
-        req.body;
+      const { title, description } = req.body;
+      if (!title || !description) {
+        return res.writeHead(404).end(
+          JSON.stringify({
+            error: true,
+            success: false,
+            message: "title ou description não enviados.",
+          })
+        );
+      }
 
       const task = {
         id: randomUUID(),
@@ -31,7 +39,13 @@ export const routes = [
 
       database.insert("tasks", task);
 
-      return res.writeHead(201).end();
+      return res.writeHead(201).end(
+        JSON.stringify({
+          error: false,
+          success: true,
+          message: "Task CRIADA com sucesso.",
+        })
+      );
     },
   },
   {
@@ -41,12 +55,39 @@ export const routes = [
       const { id } = req.params;
       const { title, description } = req.body;
 
-      database.update("tasks", id, {
+      if (!title || !description) {
+        return res.writeHead(404).end(
+          JSON.stringify({
+            error: true,
+            success: false,
+            message: "title ou description não enviados.",
+          })
+        );
+      }
+
+      const rowIndex = database.update("tasks", id, {
         title,
         description,
         update_at: new Date(),
       });
-      return res.writeHead(204).end();
+
+      if (rowIndex === -1) {
+        return res.writeHead(404).end(
+          JSON.stringify({
+            error: true,
+            success: false,
+            message: "Task não encontrada no bando de dados.",
+          })
+        );
+      }
+
+      return res.writeHead(202).end(
+        JSON.stringify({
+          error: false,
+          success: true,
+          message: "Task ATUALIZADA com sucesso.",
+        })
+      );
     },
   },
   {
@@ -55,8 +96,56 @@ export const routes = [
     handler: (req, res) => {
       const { id } = req.params;
 
-      database.delete("tasks", id);
-      return res.writeHead(204).end();
+      const rowIndex = database.delete("tasks", id);
+      if (rowIndex === -1) {
+        return res.writeHead(404).end(
+          JSON.stringify({
+            error: true,
+            success: false,
+            message: "Task não encontrada no bando de dados.",
+          })
+        );
+      }
+
+      return res.writeHead(202).end(
+        JSON.stringify({
+          error: false,
+          success: true,
+          message: "Task DELETADA com sucesso.",
+        })
+      );
+    },
+  },
+
+  {
+    method: "PATCH",
+    path: buildRoutePath("/tasks/:id/complete"),
+    handler: (req, res) => {
+      const { id } = req.params;
+
+      const [task] = database.select("tasks", { id });
+      if (!task) {
+        return res.writeHead(404).end(
+          JSON.stringify({
+            error: true,
+            success: false,
+            message: "Task não encontrada no bando de dados.",
+          })
+        );
+      }
+
+      const isTaskCompleted = !!task.completed_at;
+      const completed_at = isTaskCompleted ? null : new Date();
+
+      database.update("tasks", id, { completed_at });
+
+      return res.writeHead(202).end(
+        JSON.stringify({
+          error: false,
+          success: true,
+          message: "Task ATUALIZADA com sucesso.",
+        })
+      );
     },
   },
 ];
